@@ -1,0 +1,146 @@
+import java.util.Arrays;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Predicate;
+
+public class SecondLabPart2 {
+
+    // ===== Student model =====
+    static class Student {
+        private String name;
+        private String group;
+        private int[] marks;
+
+        public Student(String name, String group, int[] marks) {
+            this.name = name;
+            this.group = group;
+            this.marks = marks;
+        }
+
+        public String getName() { return name; }
+        public String getGroup() { return group; }
+        public int[] getMarks() { return marks; }
+
+        public void setName(String name) { this.name = name; }
+        public void setGroup(String group) { this.group = group; }
+        public void setMarks(int[] marks) { this.marks = marks; }
+    }
+
+    // ===== Helpers =====
+    public static int[] filter(int[] input, Predicate<Integer> p) {
+        int[] tmp = new int[input.length];
+        int k = 0;
+        for (int x : input) {
+            if (p.test(x)) tmp[k++] = x;
+        }
+        return Arrays.copyOfRange(tmp, 0, k);
+    }
+
+    public static Student[] filterStudents(Student[] input, Predicate<Student> p) {
+        Student[] tmp = new Student[input.length];
+        int k = 0;
+        for (Student s : input) {
+            if (p.test(s)) tmp[k++] = s;
+        }
+        return Arrays.copyOfRange(tmp, 0, k);
+    }
+
+    public static Student[] filterStudents2(Student[] input, Predicate<Student> p1, Predicate<Student> p2) {
+        return filterStudents(input, s -> p1.test(s) && p2.test(s));
+    }
+
+    public static void forEach(Student[] input, Consumer<Student> action) {
+        for (Student s : input) action.accept(s);
+    }
+
+    public static void doIf(int[] input, Predicate<Integer> p, Consumer<Integer> action) {
+        for (int x : input) {
+            if (p.test(x)) action.accept(x);
+        }
+    }
+
+    public static int[] processArray(int[] input, Function<Integer, Integer> f) {
+        int[] res = new int[input.length];
+        for (int i = 0; i < input.length; i++) res[i] = f.apply(input[i]);
+        return res;
+    }
+
+    public static String[] stringify(int[] digits, Function<Integer, String> f) {
+        String[] res = new String[digits.length];
+        for (int i = 0; i < digits.length; i++) res[i] = f.apply(digits[i]);
+        return res;
+    }
+
+    // ===== Task 1: prime predicate =====
+    public static boolean isPrime(int n) {
+        if (n <= 1) return false;
+        if (n == 2) return true;
+        if (n % 2 == 0) return false;
+        for (int d = 3; d * d <= n; d += 2) {
+            if (n % d == 0) return false;
+        }
+        return true;
+    }
+
+    // ===== MAIN: check all tasks =====
+    public static void main(String[] args) {
+
+        // --- Task 1 ---
+        Predicate<Integer> primePredicate = SecondLabPart2::isPrime;
+        System.out.println("Task1 prime test: " + primePredicate.test(2) + ", " + primePredicate.test(15) + ", " + primePredicate.test(17));
+
+        // --- Task 2 ---
+        Student[] students = new Student[] {
+                new Student("Ivan Petrenko", "KN-21", new int[]{90, 75, 61}),
+                new Student("Olena Shevchenko", "KN-21", new int[]{55, 70, 80}), // has debt (<60)
+                new Student("Maksym Bondar", "KN-22", new int[]{100, 95, 88}),
+                new Student("Iryna Kovalenko", "KN-22", new int[]{59, 59, 60}) // has debts
+        };
+
+        Predicate<Student> hasDebt = s -> {
+            for (int m : s.getMarks()) if (m < 60) return true;
+            return false;
+        };
+
+        Student[] withoutDebt = filterStudents(students, hasDebt.negate());
+        System.out.println("Task2 students without debts: " + withoutDebt.length);
+
+        // --- Task 3 (two predicates) ---
+        Predicate<Student> groupKN21 = s -> "KN-21".equals(s.getGroup());
+        Student[] kn21WithoutDebt = filterStudents2(students, groupKN21, hasDebt.negate());
+        System.out.println("Task3 KN-21 without debts: " + kn21WithoutDebt.length);
+
+        // --- Task 4 Consumer Student => print SURNAME+NAME (here we print full name) ---
+        Consumer<Student> printStudent = s -> System.out.println("Task4: " + s.getName());
+        forEach(students, printStudent);
+
+        // --- Task 5 doIf(Predicate + Consumer) ---
+        int[] nums = {1,2,3,4,5,6,7,8,9,10};
+        Predicate<Integer> even = x -> x % 2 == 0;
+        Consumer<Integer> printer = x -> System.out.println("Task5 even: " + x);
+        doIf(nums, even, printer);
+
+        // --- Task 6 Function n -> 2^n ---
+        Function<Integer, Integer> pow2 = n -> (n < 0) ? 0 : (1 << n);
+        int[] ten = {0,1,2,3,4,5,6,7,8,9};
+        System.out.println("Task6 pow2: " + Arrays.toString(processArray(ten, pow2)));
+
+        // --- Task 7 stringify digits 0..9 ---
+        Function<Integer, String> uaDigits = d -> {
+            switch (d) {
+                case 0: return "нуль";
+                case 1: return "один";
+                case 2: return "два";
+                case 3: return "три";
+                case 4: return "чотири";
+                case 5: return "п’ять";
+                case 6: return "шість";
+                case 7: return "сім";
+                case 8: return "вісім";
+                case 9: return "дев’ять";
+                default: return "невідомо";
+            }
+        };
+        System.out.println("Task7 stringify: " + Arrays.toString(stringify(ten, uaDigits)));
+    }
+}
